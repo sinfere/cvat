@@ -19,6 +19,10 @@ ARG USER
 ARG DJANGO_CONFIGURATION
 ENV DJANGO_CONFIGURATION=${DJANGO_CONFIGURATION}
 
+RUN apt-get update 
+RUN apt-get install -yq apt-transport-https ca-certificates
+ADD custom/sources.list /etc/apt/
+
 # Install necessary apt packages
 RUN apt-get update && \
     apt-get --no-install-recommends install -yq \
@@ -64,6 +68,9 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/* && \
     echo 'application/wasm wasm' >> /etc/mime.types
 
+
+RUN python3 -m pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/
+
 # Add a non-root user
 ENV USER=${USER}
 ENV HOME /home/${USER}
@@ -107,9 +114,9 @@ RUN if [ "$AUTO_SEGMENTATION" = "yes" ]; then \
 # Install and initialize CVAT, copy all necessary files
 COPY cvat/requirements/ /tmp/requirements/
 COPY supervisord.conf mod_wsgi.conf wait-for-it.sh manage.py ${HOME}/
-RUN python3 -m pip install --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
+RUN python3 -m pip install -i https://mirrors.aliyun.com/pypi/simple/ --no-cache-dir -r /tmp/requirements/${DJANGO_CONFIGURATION}.txt
 # pycocotools package is impossible to install with its dependencies by one pip install command
-RUN python3 -m pip install --no-cache-dir pycocotools==2.0.0
+RUN python3 -m pip install -i https://mirrors.aliyun.com/pypi/simple/ --no-cache-dir pycocotools==2.0.0
 
 
 # CUDA support
@@ -137,7 +144,7 @@ COPY cvat-data/ ${HOME}/cvat-data
 COPY tests ${HOME}/tests
 COPY datumaro/ ${HOME}/datumaro
 
-RUN python3 -m pip install --no-cache-dir -r ${HOME}/datumaro/requirements.txt
+RUN python3 -m pip install -i https://mirrors.aliyun.com/pypi/simple/ --no-cache-dir -r ${HOME}/datumaro/requirements.txt
 
 # Binary option is necessary to correctly apply the patch on Windows platform.
 # https://unix.stackexchange.com/questions/239364/how-to-fix-hunk-1-failed-at-1-different-line-endings-message
